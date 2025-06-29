@@ -10,37 +10,38 @@ const ServerWakeupScreen = ({ onServerReady }) => {
     checkServerStatus();
   }, []);
 
-  const checkServerStatus = async () => {
-    try {
-      setStatus('checking');
-      setMessage('Connecting to server...');
-      
-      // Use fetch with proper error handling
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Server health check successful:', data);
-        setStatus('ready');
-        setMessage('Server is ready!');
-        setTimeout(() => onServerReady(), 1000);
-        return;
-      } else {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
-    } catch (error) {
+const checkServerStatus = async () => {
+  try {
+    setStatus('checking');
+    setMessage('Connecting to server...');
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
+      method: 'GET',
+      mode: 'cors', // Explicitly set CORS mode
+      credentials: 'include', // Include credentials
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Server health check successful:', data);
+      setStatus('ready');
+      setMessage('Server is ready!');
+      setTimeout(() => onServerReady(), 1000);
+      return;
+    } else {
+      throw new Error(`Server responded with status: ${response.status}`);
+    }
+  }  catch (error) {
       console.log('Server health check failed:', error.message);
       
       if (error.name === 'AbortError') {

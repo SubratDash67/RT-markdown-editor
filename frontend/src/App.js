@@ -24,38 +24,41 @@ function App() {
     }
   }, []);
 
-  const checkServerHealth = async () => {
-    try {
-      console.log('Checking server health at:', process.env.REACT_APP_API_URL);
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
-        method: 'GET',
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Server is ready:', data);
-        setServerReady(true);
-      } else {
-        console.log('Server not ready, status:', response.status);
-        setServerReady(false);
-      }
-    } catch (error) {
-      console.log('Server health check failed:', error.message);
+const checkServerHealth = async () => {
+  try {
+    console.log('Checking server health at:', process.env.REACT_APP_API_URL);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'include',
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Server is ready:', data);
+      setServerReady(true);
+    } else {
+      console.log('Server not ready, status:', response.status);
       setServerReady(false);
-    } finally {
-      setCheckingServer(false);
     }
-  };
+  } catch (error) {
+    console.log('Server health check failed:', error.message);
+    setServerReady(false);
+  } finally {
+    setCheckingServer(false);
+  }
+};
 
   // Show loading while checking server
   if (checkingServer) {
