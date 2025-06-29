@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import * as Y from 'yjs'; // Correct import
 import { yCollab } from 'y-codemirror.next';
 import { useCollaboration } from '../contexts/CollaborationContext';
 import { useDocument } from '../contexts/DocumentContext';
@@ -20,7 +21,7 @@ export const useCollaborativeEditor = () => {
     }
 
     const newYtext = ydoc.getText('content');
-    const newUndoManager = new Y.UndoManager(newYtext);
+    const newUndoManager = new Y.UndoManager(newYtext); // Use Y.UndoManager correctly
 
     if (currentDocument.content && newYtext.length === 0) {
       newYtext.insert(0, currentDocument.content);

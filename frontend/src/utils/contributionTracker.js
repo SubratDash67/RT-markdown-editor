@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import * as Y from 'yjs'; // Add this import if using Y.js types
 
 export class ContributionTracker {
   constructor(documentId, userId) {

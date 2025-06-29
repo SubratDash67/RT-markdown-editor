@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import * as Y from 'yjs';
+import * as Y from 'yjs'; // Correct import
 import { WebsocketProvider } from 'y-websocket';
-import { Awareness } from 'y-protocols/awareness';
 import { useAuth } from './AuthContext';
 import { useDocument } from './DocumentContext';
 
@@ -44,8 +43,8 @@ export const CollaborationProvider = ({ children }) => {
   const initializeCollaboration = (documentId) => {
     if (!user || !documentId) return;
 
-    const newYdoc = new Y.Doc();
-    const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:5001';
+    const newYdoc = new Y.Doc(); // Use Y.Doc correctly
+    const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:5000';
     const newProvider = new WebsocketProvider(wsUrl, `doc-${documentId}`, newYdoc);
     const newAwareness = newProvider.awareness;
 
