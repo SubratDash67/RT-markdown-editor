@@ -3,3 +3,7 @@ node_modules/
 /frontend/build 
 /backend/dist 
 .env.example
+/frontend/.env
+/backend/.env
+venv
+.env.production

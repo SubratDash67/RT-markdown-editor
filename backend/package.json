@@ -1,21 +1,29 @@
 {
-  "name": "rt-markdown-editor-backend",
+  "name": "rtmd-backend",
   "version": "1.0.0",
-  "description": "Backend for Real-time Collaborative Markdown Editor",
-  "main": "src/server.js",
+  "description": "Real-time collaborative markdown editor backend",
+  "main": "src/index.js",
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "echo 'No build step required'",
+    "test": "echo 'No tests specified'"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
+    "helmet": "^7.1.0",
     "dotenv": "^16.3.1",
     "ws": "^8.14.2",
     "y-websocket": "^1.5.0",
-    "@supabase/supabase-js": "^2.38.0"
+    "yjs": "^13.6.10",
+    "@supabase/supabase-js": "^2.38.5",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.2"
   }
 }
