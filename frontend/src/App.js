@@ -14,10 +14,11 @@ function App() {
   const [checkingServer, setCheckingServer] = useState(true);
 
   useEffect(() => {
-    // Only show wakeup screen in production
-    if (process.env.NODE_ENV === 'production') {
+    // Always check server in production, skip in development
+    if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
       checkServerHealth();
     } else {
+      // In development, assume server is ready
       setServerReady(true);
       setCheckingServer(false);
     }
@@ -25,30 +26,50 @@ function App() {
 
   const checkServerHealth = async () => {
     try {
+      console.log('Checking server health at:', process.env.REACT_APP_API_URL);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
         method: 'GET',
-        timeout: 5000,
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+        },
       });
       
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
+        const data = await response.json();
+        console.log('Server is ready:', data);
         setServerReady(true);
+      } else {
+        console.log('Server not ready, status:', response.status);
+        setServerReady(false);
       }
     } catch (error) {
-      // Server needs wakeup
+      console.log('Server health check failed:', error.message);
       setServerReady(false);
     } finally {
       setCheckingServer(false);
     }
   };
 
+  // Show loading while checking server
   if (checkingServer) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Initializing application...</p>
+        </div>
       </div>
     );
   }
 
+  // Show server wakeup screen if server is not ready in production
   if (!serverReady && process.env.NODE_ENV === 'production') {
     return <ServerWakeupScreen onServerReady={() => setServerReady(true)} />;
   }

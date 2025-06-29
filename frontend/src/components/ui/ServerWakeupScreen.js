@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Server, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { apiClient } from '../../utils/apiClient';
 
 const ServerWakeupScreen = ({ onServerReady }) => {
-  const [status, setStatus] = useState('checking'); // checking, waking, ready, error
+  const [status, setStatus] = useState('checking');
   const [attempt, setAttempt] = useState(0);
   const [message, setMessage] = useState('Checking server status...');
 
@@ -16,32 +15,54 @@ const ServerWakeupScreen = ({ onServerReady }) => {
       setStatus('checking');
       setMessage('Connecting to server...');
       
+      // Use fetch with proper error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL}/health`, {
         method: 'GET',
-        timeout: 10000,
+        signal: controller.signal,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
       });
       
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
+        const data = await response.json();
+        console.log('Server health check successful:', data);
         setStatus('ready');
         setMessage('Server is ready!');
         setTimeout(() => onServerReady(), 1000);
+        return;
       } else {
-        throw new Error('Server not ready');
+        throw new Error(`Server responded with status: ${response.status}`);
       }
     } catch (error) {
+      console.log('Server health check failed:', error.message);
+      
+      if (error.name === 'AbortError') {
+        setMessage('Connection timeout. Server is starting up...');
+      } else {
+        setMessage('Server is starting up... This may take up to 60 seconds.');
+      }
+      
       setStatus('waking');
       setAttempt(prev => prev + 1);
-      setMessage('Server is starting up... This may take up to 60 seconds.');
       
-      // Retry every 5 seconds
+      // Retry with exponential backoff
+      const retryDelay = Math.min(5000 + (attempt * 2000), 15000); // Max 15 seconds
+      
       setTimeout(() => {
-        if (attempt < 20) { // Max 20 attempts (100 seconds)
+        if (attempt < 15) { // Max 15 attempts
           checkServerStatus();
         } else {
           setStatus('error');
           setMessage('Server failed to start. Please try refreshing the page.');
         }
-      }, 5000);
+      }, retryDelay);
     }
   };
 
@@ -63,7 +84,7 @@ const ServerWakeupScreen = ({ onServerReady }) => {
   const getProgressWidth = () => {
     if (status === 'ready') return '100%';
     if (status === 'error') return '100%';
-    return `${Math.min((attempt / 20) * 100, 95)}%`;
+    return `${Math.min((attempt / 15) * 100, 95)}%`;
   };
 
   return (
@@ -93,26 +114,46 @@ const ServerWakeupScreen = ({ onServerReady }) => {
               </div>
               {status === 'waking' && (
                 <p className="text-sm text-gray-500 mt-2">
-                  Attempt {attempt} of 20
+                  Attempt {attempt} of 15 • Estimated time: {Math.ceil(attempt * 2)} seconds
                 </p>
               )}
             </div>
           )}
           
           {status === 'waking' && (
-            <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg">
+            <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded-lg mb-4">
               <p className="mb-1">🚀 <strong>Free tier servers sleep when inactive</strong></p>
               <p>The server is waking up and will be ready shortly.</p>
             </div>
           )}
           
           {status === 'error' && (
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Retry
-            </button>
+            <div className="space-y-3">
+              <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                <p>Unable to connect to the server. This could be due to:</p>
+                <ul className="list-disc list-inside mt-2 text-left">
+                  <li>Server is taking longer than usual to start</li>
+                  <li>Network connectivity issues</li>
+                  <li>Server configuration problems</li>
+                </ul>
+              </div>
+              <button
+                onClick={() => {
+                  setAttempt(0);
+                  setStatus('checking');
+                  checkServerStatus();
+                }}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors mr-2"
+              >
+                Retry
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Refresh Page
+              </button>
+            </div>
           )}
         </div>
       </div>
