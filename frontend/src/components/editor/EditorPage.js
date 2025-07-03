@@ -31,13 +31,33 @@ const EditorPageContent = () => {
   const documentContent = currentDocument?.content || '';
   const { forceSave, isUnsaved } = useAutoSave(documentContent, documentTitle);
 
+  const handleNewDocument = async () => {
+    const { data, error } = await createDocument();
+    if (!error && data) {
+      navigate(`/editor/${data.id}`);
+    }
+  };
+
+  const handleTitleChange = async (newTitle) => {
+    setDocumentTitle(newTitle);
+    if (currentDocument && newTitle !== currentDocument.title) {
+      await updateDocument(currentDocument.id, { title: newTitle });
+    }
+  };
+
+  const handleSave = () => {
+    forceSave();
+    setLastSaved(new Date());
+  };
+
   useEffect(() => {
     if (documentId && documentId !== currentDocument?.id) {
       loadDocument(documentId);
     } else if (!documentId && !currentDocument) {
       handleNewDocument();
     }
-  }, [documentId, currentDocument?.id, loadDocument, handleNewDocument]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId, currentDocument?.id]); // Functions are not stable, disable lint
 
   useEffect(() => {
     if (currentDocument) {
@@ -71,25 +91,6 @@ const EditorPageContent = () => {
       contributionTracker.trackChange(currentDocument.content);
     }
   }, [currentDocument?.content, contributionTracker]);
-
-  const handleNewDocument = useCallback(async () => {
-    const { data, error } = await createDocument();
-    if (!error && data) {
-      navigate(`/editor/${data.id}`);
-    }
-  }, [createDocument, navigate]);
-
-  const handleTitleChange = useCallback(async (newTitle) => {
-    setDocumentTitle(newTitle);
-    if (currentDocument && newTitle !== currentDocument.title) {
-      await updateDocument(currentDocument.id, { title: newTitle });
-    }
-  }, [currentDocument, updateDocument]);
-
-  const handleSave = useCallback(() => {
-    forceSave();
-    setLastSaved(new Date());
-  }, [forceSave]);
 
   if (loading) {
     return (
