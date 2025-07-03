@@ -17,6 +17,7 @@ import CollaborationToolbar from '../collaboration/CollaborationToolbar';
 import VersionHistory from '../versioning/VersionHistory';
 import ShareDialog from '../sharing/ShareDialog';
 import ContributionMetrics from '../metrics/ContributionMetrics';
+import ClearDefaultContentButton from './ClearDefaultContentButton';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
@@ -189,6 +190,8 @@ const TopBar = ({
 
         <div className="flex items-center gap-4">
           <CollaborationToolbar onSave={onSave} />
+          
+          <ClearDefaultContentButton />
           
           <div className="flex items-center gap-2 text-xs text-gray-500">
             {isModified && (

@@ -264,7 +264,10 @@ $$ LANGUAGE plpgsql;
 
 GRANT EXECUTE ON FUNCTION get_daily_contributions TO authenticated;
 
--- Create a sample document if none exists (for testing)
+-- Sample document creation is commented out to prevent auto-generation
+-- If you want to create a sample document manually, uncomment and run the following:
+
+/*
 INSERT INTO public.documents (title, content, user_id) 
 SELECT 
     'Welcome to Real-Time Markdown!',
@@ -300,6 +303,24 @@ Generate shareable links with view or edit permissions.
 Happy writing! 🚀',
     (SELECT id FROM auth.users LIMIT 1)
 WHERE NOT EXISTS (SELECT 1 FROM public.documents);
+*/
+
+-- Note: Documents will be created empty when users create new documents
+
+-- Clean up any existing documents with unwanted default content
+UPDATE public.documents 
+SET content = '' 
+WHERE content LIKE '%Welcome to your new document%' 
+   OR content LIKE '%Start typing here...%'
+   OR content LIKE '%Welcome to Real-Time Markdown%';
+
+-- If you want to delete all sample/test documents entirely, uncomment the following:
+-- DELETE FROM public.documents WHERE content LIKE '%Welcome to Real-Time Markdown%';
+
+-- Verify the cleanup worked
+SELECT id, title, LEFT(content, 50) as content_preview, created_at 
+FROM public.documents 
+ORDER BY created_at DESC;
 
 -- Add some sample contribution data for testing
 -- (This will be populated automatically as users interact with documents)

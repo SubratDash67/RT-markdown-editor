@@ -21,15 +21,14 @@ export const DocumentProvider = ({ children }) => {
   const createDocument = async (title = 'Untitled Document') => {
     if (!user) return { error: 'User not authenticated' };
 
-    const defaultContent = '# Welcome to your new document\n\nStart typing here...';
-    
+    // Create document with empty content - let users add their own content
     const { data, error } = await supabase
       .from('documents')
       .insert([
         {
           title,
-          content: defaultContent,
-          owner_id: user.id,
+          content: '', // Empty content instead of default placeholder
+          user_id: user.id, // Fixed: should be user_id not owner_id
         }
       ])
       .select()
@@ -45,6 +44,8 @@ export const DocumentProvider = ({ children }) => {
 
   const loadDocument = async (documentId) => {
     setLoading(true);
+    console.log('Loading document:', documentId);
+    
     const { data, error } = await supabase
       .from('documents')
       .select('*')
@@ -52,7 +53,10 @@ export const DocumentProvider = ({ children }) => {
       .single();
 
     if (!error) {
+      console.log('Loaded document content:', data?.content?.substring(0, 100) + '...');
       setCurrentDocument(data);
+    } else {
+      console.error('Error loading document:', error);
     }
     setLoading(false);
     return { data, error };

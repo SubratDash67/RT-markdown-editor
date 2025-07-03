@@ -148,7 +148,7 @@ const EditorPageContent = () => {
       <div className="flex-1 flex overflow-hidden">
         <div className={`${previewMode === 'preview' ? 'hidden' : previewMode === 'split' ? 'w-1/2' : 'w-full'} flex flex-col`}>
           <CollaborativeMarkdownEditor
-            placeholder="# Start writing your collaborative markdown here...\n\nThis editor supports:\n- Real-time collaboration\n- Auto-save every 2 seconds\n- Version history\n- Contribution tracking\n- Shareable links\n\nStart typing to see the magic happen!"
+            placeholder="Start typing to begin your collaborative markdown document..."
           />
         </div>
 

@@ -31,14 +31,23 @@ export const useCollaborativeEditor = () => {
       console.log('Initializing Y.js document with content');
       newYtext.insert(0, currentDocument.content);
     } else if (newYtext.length > 0) {
-      // If Y.js already has content, emit it for preview sync
-      const content = newYtext.toString();
-      setTimeout(() => {
-        const changeEvent = new CustomEvent('ytextChange', { 
-          detail: { content, isInitial: true } 
-        });
-        window.dispatchEvent(changeEvent);
-      }, 100);
+      // Check if Y.js contains unwanted default content and clear it
+      const ytextContent = newYtext.toString();
+      const isDefaultContent = ytextContent.includes('Welcome to your new document') || 
+                              ytextContent.includes('Start typing here...');
+      
+      if (isDefaultContent && (!currentDocument.content || currentDocument.content === '')) {
+        console.log('Clearing unwanted default content from Y.js');
+        newYtext.delete(0, newYtext.length);
+      } else {
+        // If Y.js already has valid content, emit it for preview sync
+        setTimeout(() => {
+          const changeEvent = new CustomEvent('ytextChange', { 
+            detail: { content: ytextContent, isInitial: true } 
+          });
+          window.dispatchEvent(changeEvent);
+        }, 100);
+      }
     }
 
     const extensions = [
@@ -118,11 +127,26 @@ export const useCollaborativeEditor = () => {
     }
   };
 
+  const clearDefaultContent = () => {
+    if (ytext) {
+      const content = ytext.toString();
+      const hasDefaultContent = content.includes('Welcome to your new document') || 
+                               content.includes('Start typing here...') ||
+                               content.includes('Welcome to Real-Time Markdown');
+      
+      if (hasDefaultContent) {
+        console.log('Clearing default content from Y.js document');
+        ytext.delete(0, ytext.length);
+      }
+    }
+  };
+
   return {
     ytext,
     undoManager,
     collaborativeExtensions,
     isConnected,
     forceSave,
+    clearDefaultContent,
   };
 };
