@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShareManager } from '../../utils/shareManager';
 import { useDocument } from '../../contexts/DocumentContext';
 import { 
@@ -21,11 +21,19 @@ const ShareDialog = ({ isOpen, onClose }) => {
   const [newSharePermission, setNewSharePermission] = useState('view');
   const [newShareExpiry, setNewShareExpiry] = useState('');
   const [copiedToken, setCopiedToken] = useState(null);
+  const copyTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && currentDocument) {
       loadShares();
     }
+    
+    // Cleanup on unmount
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
   }, [isOpen, currentDocument]);
 
   const loadShares = async () => {
@@ -58,7 +66,13 @@ const ShareDialog = ({ isOpen, onClose }) => {
     const url = ShareManager.buildShareUrl(shareToken);
     await navigator.clipboard.writeText(url);
     setCopiedToken(shareToken);
-    setTimeout(() => setCopiedToken(null), 2000);
+    
+    // Clear any existing timeout
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+    
+    copyTimeoutRef.current = setTimeout(() => setCopiedToken(null), 2000);
   };
 
   const handleRevokeShare = async (shareId) => {

@@ -27,10 +27,9 @@ const EditorPageContent = () => {
   const [lastSaved, setLastSaved] = useState(null);
   const [contributionTracker, setContributionTracker] = useState(null);
 
-  const { forceSave, isUnsaved } = useAutoSave(
-    currentDocument?.content || '', 
-    documentTitle
-  );
+  // Use stable references for auto-save to prevent re-renders
+  const documentContent = currentDocument?.content || '';
+  const { forceSave, isUnsaved } = useAutoSave(documentContent, documentTitle);
 
   useEffect(() => {
     if (documentId && documentId !== currentDocument?.id) {
@@ -38,15 +37,20 @@ const EditorPageContent = () => {
     } else if (!documentId && !currentDocument) {
       handleNewDocument();
     }
-  }, [documentId]);
+  }, [documentId, currentDocument?.id, loadDocument, handleNewDocument]);
 
   useEffect(() => {
     if (currentDocument) {
       setDocumentTitle(currentDocument.title);
       setLastSaved(new Date(currentDocument.updated_at));
 
-      // Initialize contribution tracking
-      if (user && !contributionTracker) {
+      // Initialize contribution tracking only once per document
+      if (user && currentDocument.id) {
+        // Clean up existing tracker first
+        if (contributionTracker) {
+          contributionTracker.stop();
+        }
+        
         const tracker = new ContributionTracker(currentDocument.id, user.id);
         tracker.start();
         setContributionTracker(tracker);
@@ -56,35 +60,36 @@ const EditorPageContent = () => {
     return () => {
       if (contributionTracker) {
         contributionTracker.stop();
+        setContributionTracker(null);
       }
     };
-  }, [currentDocument, user]);
+  }, [currentDocument?.id, user?.id]); // Only depend on IDs to prevent unnecessary re-runs
 
   useEffect(() => {
     // Track content changes for contribution metrics
-    if (contributionTracker && currentDocument) {
-      contributionTracker.trackChange(currentDocument.content || '');
+    if (contributionTracker && currentDocument?.content) {
+      contributionTracker.trackChange(currentDocument.content);
     }
   }, [currentDocument?.content, contributionTracker]);
 
-  const handleNewDocument = async () => {
+  const handleNewDocument = useCallback(async () => {
     const { data, error } = await createDocument();
     if (!error && data) {
       navigate(`/editor/${data.id}`);
     }
-  };
+  }, [createDocument, navigate]);
 
-  const handleTitleChange = async (newTitle) => {
+  const handleTitleChange = useCallback(async (newTitle) => {
     setDocumentTitle(newTitle);
     if (currentDocument && newTitle !== currentDocument.title) {
       await updateDocument(currentDocument.id, { title: newTitle });
     }
-  };
+  }, [currentDocument, updateDocument]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     forceSave();
     setLastSaved(new Date());
-  };
+  }, [forceSave]);
 
   if (loading) {
     return (

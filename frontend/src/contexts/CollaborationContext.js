@@ -95,13 +95,13 @@ export const CollaborationProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (currentDocument?.id) {
+    if (currentDocument?.id && user) {
       const cleanup = initializeCollaboration(currentDocument.id);
       return cleanup;
     } else {
       destroyCollaboration();
     }
-  }, [currentDocument?.id, user]);
+  }, [currentDocument?.id, user?.id]); // Only depend on IDs to prevent unnecessary reinitializations
 
   useEffect(() => {
     return () => {

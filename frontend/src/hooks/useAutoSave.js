@@ -12,6 +12,12 @@ export const useAutoSave = (content, title) => {
   const saveDocument = useCallback(async (contentToSave, titleToSave) => {
     if (!currentDocument) return;
 
+    // Prevent saving if content hasn't actually changed
+    if (contentToSave === lastSavedContentRef.current && 
+        titleToSave === lastSavedTitleRef.current) {
+      return;
+    }
+
     try {
       await updateDocument(currentDocument.id, {
         content: contentToSave,

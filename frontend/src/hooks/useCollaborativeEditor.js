@@ -21,9 +21,13 @@ export const useCollaborativeEditor = () => {
     }
 
     const newYtext = ydoc.getText('content');
-    const newUndoManager = new Y.UndoManager(newYtext); // Use Y.UndoManager correctly
+    const newUndoManager = new Y.UndoManager(newYtext);
 
-    if (currentDocument.content && newYtext.length === 0) {
+    // Only insert content if Y.js doc is empty AND we have content to insert
+    // Also check if the content is different to prevent loops
+    if (currentDocument.content && 
+        newYtext.length === 0 && 
+        currentDocument.content !== newYtext.toString()) {
       newYtext.insert(0, currentDocument.content);
     }
 
@@ -33,18 +37,25 @@ export const useCollaborativeEditor = () => {
       }),
     ];
 
+    let isUpdating = false; // Flag to prevent update loops
+
     newYtext.observe((event) => {
-      if (event.transaction.origin !== 'sync') {
+      // Prevent loops by ignoring sync operations and our own updates
+      if (event.transaction.origin !== 'sync' && !isUpdating) {
         if (syncTimeoutRef.current) {
           clearTimeout(syncTimeoutRef.current);
         }
         
         syncTimeoutRef.current = setTimeout(() => {
           const content = newYtext.toString();
+          // Only update if content actually changed
           if (content !== currentDocument.content) {
+            isUpdating = true;
             updateDocument(currentDocument.id, {
               content,
               updated_at: new Date().toISOString()
+            }).finally(() => {
+              isUpdating = false;
             });
           }
         }, 2000);
@@ -60,7 +71,7 @@ export const useCollaborativeEditor = () => {
         clearTimeout(syncTimeoutRef.current);
       }
     };
-  }, [ydoc, awareness, currentDocument]);
+  }, [ydoc, awareness, currentDocument?.id]); // Use currentDocument.id instead of full object
 
   const forceSave = () => {
     if (syncTimeoutRef.current) {

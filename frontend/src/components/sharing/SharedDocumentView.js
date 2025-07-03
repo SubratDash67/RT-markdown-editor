@@ -93,10 +93,15 @@ const SharedDocumentView = () => {
       <div className="flex-1 flex overflow-hidden">
         {canEdit && viewMode === 'split' && (
           <div className="w-1/2 flex flex-col">
-            <CollaborativeMarkdownEditor
-              placeholder="You have edit access to this shared document..."
-              readOnly={false}
-            />
+            {/* Use regular MarkdownEditor for shared documents to avoid collaboration conflicts */}
+            <div className="h-full w-full bg-white border-r border-gray-200 p-4">
+              <textarea
+                className="w-full h-full resize-none border-none outline-none font-mono text-sm"
+                placeholder="You have edit access to this shared document..."
+                value={document.content}
+                readOnly
+              />
+            </div>
           </div>
         )}
 

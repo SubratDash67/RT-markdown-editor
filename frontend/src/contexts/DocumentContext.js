@@ -21,12 +21,14 @@ export const DocumentProvider = ({ children }) => {
   const createDocument = async (title = 'Untitled Document') => {
     if (!user) return { error: 'User not authenticated' };
 
+    const defaultContent = '# Welcome to your new document\n\nStart typing here...';
+    
     const { data, error } = await supabase
       .from('documents')
       .insert([
         {
           title,
-          content: '# Welcome to your new document\n\nStart typing here...',
+          content: defaultContent,
           owner_id: user.id,
         }
       ])
@@ -57,6 +59,13 @@ export const DocumentProvider = ({ children }) => {
   };
 
   const updateDocument = async (documentId, updates) => {
+    // Prevent unnecessary updates if content hasn't changed
+    if (currentDocument && 
+        updates.content === currentDocument.content && 
+        updates.title === currentDocument.title) {
+      return { data: currentDocument, error: null };
+    }
+
     const { data, error } = await supabase
       .from('documents')
       .update(updates)
