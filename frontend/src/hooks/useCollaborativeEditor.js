@@ -127,26 +127,11 @@ export const useCollaborativeEditor = () => {
     }
   };
 
-  const clearDefaultContent = () => {
-    if (ytext) {
-      const content = ytext.toString();
-      const hasDefaultContent = content.includes('Welcome to your new document') || 
-                               content.includes('Start typing here...') ||
-                               content.includes('Welcome to Real-Time Markdown');
-      
-      if (hasDefaultContent) {
-        console.log('Clearing default content from Y.js document');
-        ytext.delete(0, ytext.length);
-      }
-    }
-  };
-
   return {
     ytext,
     undoManager,
     collaborativeExtensions,
     isConnected,
     forceSave,
-    clearDefaultContent,
   };
 };
