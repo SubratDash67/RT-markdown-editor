@@ -4,6 +4,7 @@ import { useDocument } from '../../contexts/DocumentContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { CollaborationProvider } from '../../contexts/CollaborationContext';
 import { useAutoSave } from '../../hooks/useAutoSave';
+import { useCollaborativeEditor } from '../../hooks/useCollaborativeEditor';
 import { ContributionTracker } from '../../utils/contributionTracker';
 import TopBar from '../ui/TopBar';
 import CollaborativeMarkdownEditor from './CollaborativeMarkdownEditor';
@@ -26,6 +27,7 @@ const EditorPageContent = () => {
   const [previewMode, setPreviewMode] = useState('split');
   const [lastSaved, setLastSaved] = useState(null);
   const [contributionTracker, setContributionTracker] = useState(null);
+  const [liveContent, setLiveContent] = useState('');
   
   // Use refs to store the latest functions to avoid dependency issues
   const loadDocumentRef = useRef(loadDocument);
@@ -103,6 +105,25 @@ const EditorPageContent = () => {
     }
   }, [currentDocument?.content, contributionTracker]);
 
+  // Track real-time content changes from Y.js and custom events
+  useEffect(() => {
+    const handleYTextChange = (event) => {
+      if (event.detail?.content !== undefined) {
+        setLiveContent(event.detail.content);
+        
+        // Track for contributions
+        if (contributionTracker) {
+          contributionTracker.trackChange(event.detail.content);
+        }
+      }
+    };
+
+    window.addEventListener('ytextChange', handleYTextChange);
+    return () => {
+      window.removeEventListener('ytextChange', handleYTextChange);
+    };
+  }, [contributionTracker]);
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -111,7 +132,7 @@ const EditorPageContent = () => {
     );
   }
 
-  const content = currentDocument?.content || '';
+  const content = liveContent || currentDocument?.content || '';
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">

@@ -43,8 +43,13 @@ export const CollaborationProvider = ({ children }) => {
   const initializeCollaboration = (documentId) => {
     if (!user || !documentId) return;
 
+    console.log('Initializing collaboration for document:', documentId);
+
     const newYdoc = new Y.Doc(); // Use Y.Doc correctly
     const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:5000';
+    
+    console.log('Connecting to WebSocket:', wsUrl);
+    
     const newProvider = new WebsocketProvider(wsUrl, `doc-${documentId}`, newYdoc);
     const newAwareness = newProvider.awareness;
 
@@ -57,7 +62,13 @@ export const CollaborationProvider = ({ children }) => {
     });
 
     newProvider.on('status', (event) => {
+      console.log('WebSocket status:', event.status);
       setIsConnected(event.status === 'connected');
+    });
+
+    newProvider.on('connection-error', (error) => {
+      console.error('WebSocket connection error:', error);
+      setIsConnected(false);
     });
 
     newAwareness.on('change', () => {
@@ -68,6 +79,7 @@ export const CollaborationProvider = ({ children }) => {
         }
       });
       setConnectedUsers(users);
+      console.log('Connected users:', users.size);
     });
 
     setYdoc(newYdoc);
@@ -75,6 +87,7 @@ export const CollaborationProvider = ({ children }) => {
     setAwareness(newAwareness);
 
     return () => {
+      console.log('Cleaning up collaboration for document:', documentId);
       newProvider.destroy();
       newYdoc.destroy();
     };

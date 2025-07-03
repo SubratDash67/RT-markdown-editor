@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ContributionTracker } from '../../utils/contributionTracker';
 import { useDocument } from '../../contexts/DocumentContext';
-import { BarChart3, Users, Clock, TrendingUp, Plus, Minus } from 'lucide-react';
+import { BarChart3, Users, Clock, TrendingUp, Plus, Minus, RefreshCw } from 'lucide-react';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
 const ContributionMetrics = ({ isOpen, onClose }) => {
@@ -13,15 +13,35 @@ const ContributionMetrics = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (isOpen && currentDocument) {
       loadContributions();
+      
+      // Auto-refresh every 30 seconds when open
+      const interval = setInterval(() => {
+        loadContributions();
+      }, 30000);
+
+      return () => clearInterval(interval);
     }
   }, [isOpen, currentDocument, timeRange]);
 
   const loadContributions = async () => {
     setLoading(true);
-    const { data, error } = await ContributionTracker.getDocumentContributions(currentDocument.id);
-    if (!error) {
-      const filtered = filterByTimeRange(data);
-      setContributions(aggregateContributions(filtered));
+    try {
+      console.log('Loading contributions for document:', currentDocument.id);
+      const { data, error } = await ContributionTracker.getDocumentContributions(currentDocument.id);
+      
+      if (error) {
+        console.error('Error loading contributions:', error);
+        setContributions([]);
+      } else {
+        console.log('Raw contribution data:', data);
+        const filtered = filterByTimeRange(data);
+        const aggregated = aggregateContributions(filtered);
+        console.log('Aggregated contributions:', aggregated);
+        setContributions(aggregated);
+      }
+    } catch (err) {
+      console.error('Exception loading contributions:', err);
+      setContributions([]);
     }
     setLoading(false);
   };
@@ -129,6 +149,14 @@ const ContributionMetrics = ({ isOpen, onClose }) => {
             Contribution Metrics
           </h2>
           <div className="flex items-center gap-4">
+            <button
+              onClick={loadContributions}
+              disabled={loading}
+              className="p-1 hover:bg-gray-100 rounded"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}

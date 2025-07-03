@@ -28,7 +28,17 @@ export const useCollaborativeEditor = () => {
     if (currentDocument.content && 
         newYtext.length === 0 && 
         currentDocument.content !== newYtext.toString()) {
+      console.log('Initializing Y.js document with content');
       newYtext.insert(0, currentDocument.content);
+    } else if (newYtext.length > 0) {
+      // If Y.js already has content, emit it for preview sync
+      const content = newYtext.toString();
+      setTimeout(() => {
+        const changeEvent = new CustomEvent('ytextChange', { 
+          detail: { content, isInitial: true } 
+        });
+        window.dispatchEvent(changeEvent);
+      }, 100);
     }
 
     const extensions = [
@@ -58,7 +68,29 @@ export const useCollaborativeEditor = () => {
               isUpdating = false;
             });
           }
-        }, 2000);
+        }, 1000); // Reduced from 2000ms to 1000ms for better sync
+      }
+    });
+
+    // Track Y.js text changes for contributions
+    let lastTrackedContent = '';
+    
+    newYtext.observe((event) => {
+      // Emit content change event for contribution tracking
+      const content = newYtext.toString();
+      
+      // Only emit if content actually changed from last tracked content
+      if (content !== lastTrackedContent) {
+        const changeEvent = new CustomEvent('ytextChange', { 
+          detail: { 
+            content, 
+            event,
+            changes: event.changes,
+            transaction: event.transaction
+          } 
+        });
+        window.dispatchEvent(changeEvent);
+        lastTrackedContent = content;
       }
     });
 

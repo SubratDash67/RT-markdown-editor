@@ -66,7 +66,7 @@ export const useAutoSave = (content, title) => {
       ) {
         saveDocument(content, title);
       }
-    }, 2000); // 2 second debounce
+    }, 1000); // Reduced to 1 second for better real-time collaboration
   }, [content, title, saveDocument]);
 
   const forceSave = useCallback(() => {

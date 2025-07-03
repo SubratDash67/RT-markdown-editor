@@ -1,20 +1,41 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { renderMarkdown, getWordCount, getCharacterCount, getReadingTime } from '../../utils/markdown';
 
 const MarkdownPreview = ({ content, showStats = true }) => {
-  const renderedContent = useMemo(() => {
-    return renderMarkdown(content);
+  const [liveContent, setLiveContent] = useState(content);
+
+  // Listen for real-time content updates
+  useEffect(() => {
+    const handleContentUpdate = (event) => {
+      if (event.detail?.content !== undefined) {
+        setLiveContent(event.detail.content);
+      }
+    };
+
+    window.addEventListener('ytextChange', handleContentUpdate);
+    return () => {
+      window.removeEventListener('ytextChange', handleContentUpdate);
+    };
+  }, []);
+
+  // Update content when prop changes
+  useEffect(() => {
+    setLiveContent(content);
   }, [content]);
+
+  const renderedContent = useMemo(() => {
+    return renderMarkdown(liveContent);
+  }, [liveContent]);
 
   const stats = useMemo(() => {
     if (!showStats) return null;
     
     return {
-      words: getWordCount(content),
-      characters: getCharacterCount(content),
-      readingTime: getReadingTime(content),
+      words: getWordCount(liveContent),
+      characters: getCharacterCount(liveContent),
+      readingTime: getReadingTime(liveContent),
     };
-  }, [content, showStats]);
+  }, [liveContent, showStats]);
 
   return (
     <div className="h-full w-full bg-gray-50 flex flex-col">

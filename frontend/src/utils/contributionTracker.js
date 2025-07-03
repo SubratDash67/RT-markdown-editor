@@ -21,11 +21,19 @@ export class ContributionTracker {
   }
 
   start() {
+    // Initialize lastContent with current content if available
+    if (!this.lastContent) {
+      this.lastContent = '';
+    }
+    
     this.saveInterval = setInterval(() => {
       if (this.isActive) {
         this.saveContribution();
       }
     }, 30000); // Save every 30 seconds
+    
+    // Save immediately on start to create the session
+    this.saveContribution();
   }
 
   stop() {
@@ -39,7 +47,11 @@ export class ContributionTracker {
   trackChange(newContent) {
     if (!this.isActive) return;
 
-    const oldContent = this.lastContent;
+    const oldContent = this.lastContent || '';
+    
+    // Only track if content actually changed
+    if (newContent === oldContent) return;
+
     const { insertions, deletions, charactersAdded, charactersRemoved } = 
       this.calculateDiff(oldContent, newContent);
 
@@ -48,6 +60,20 @@ export class ContributionTracker {
     this.totalCharactersAdded += charactersAdded;
     this.totalCharactersRemoved += charactersRemoved;
     this.lastContent = newContent;
+
+    // Log the changes for debugging
+    if (insertions > 0 || deletions > 0 || charactersAdded > 0 || charactersRemoved > 0) {
+      console.log('Contribution tracked:', {
+        insertions,
+        deletions,
+        charactersAdded,
+        charactersRemoved,
+        totalInsertions: this.totalInsertions,
+        totalDeletions: this.totalDeletions,
+        totalCharactersAdded: this.totalCharactersAdded,
+        totalCharactersRemoved: this.totalCharactersRemoved
+      });
+    }
   }
 
   calculateDiff(oldContent, newContent) {
@@ -59,17 +85,36 @@ export class ContributionTracker {
     let charactersAdded = 0;
     let charactersRemoved = 0;
 
-    // Simple diff calculation
+    // Character-level diff
     if (newContent.length > oldContent.length) {
       charactersAdded = newContent.length - oldContent.length;
     } else if (oldContent.length > newContent.length) {
       charactersRemoved = oldContent.length - newContent.length;
     }
 
+    // Line-level diff using a simple LCS approach
+    const maxLines = Math.max(oldLines.length, newLines.length);
+    const minLines = Math.min(oldLines.length, newLines.length);
+    
+    // Count actual line changes
+    let unchangedLines = 0;
+    for (let i = 0; i < minLines; i++) {
+      if (oldLines[i] === newLines[i]) {
+        unchangedLines++;
+      }
+    }
+
     if (newLines.length > oldLines.length) {
       insertions = newLines.length - oldLines.length;
     } else if (oldLines.length > newLines.length) {
       deletions = oldLines.length - newLines.length;
+    }
+
+    // Handle modified lines as both insertion and deletion
+    const modifiedLines = minLines - unchangedLines;
+    if (modifiedLines > 0 && newLines.length === oldLines.length) {
+      insertions += modifiedLines;
+      deletions += modifiedLines;
     }
 
     return { insertions, deletions, charactersAdded, charactersRemoved };
@@ -93,10 +138,21 @@ export class ContributionTracker {
           characters_removed: this.totalCharactersRemoved,
           time_spent_seconds: timeSpentSeconds,
           last_activity: new Date().toISOString()
+        }, { 
+          onConflict: 'document_id,user_id,session_id',
+          ignoreDuplicates: false 
         });
 
       if (error) {
         console.error('Failed to save contribution:', error);
+      } else {
+        console.log('Contribution saved successfully:', {
+          insertions: this.totalInsertions,
+          deletions: this.totalDeletions,
+          characters_added: this.totalCharactersAdded,
+          characters_removed: this.totalCharactersRemoved,
+          time_spent_seconds: timeSpentSeconds
+        });
       }
     } catch (error) {
       console.error('Error saving contribution:', error);
@@ -104,16 +160,29 @@ export class ContributionTracker {
   }
 
   static async getDocumentContributions(documentId) {
-    const { data, error } = await supabase
-      .from('user_contributions')
-      .select(`
-        *,
-        user:user_id (email)
-      `)
-      .eq('document_id', documentId)
-      .order('last_activity', { ascending: false });
+    try {
+      console.log('Fetching contributions for document:', documentId);
+      
+      const { data, error } = await supabase
+        .from('user_contributions')
+        .select(`
+          *,
+          user:user_id (email)
+        `)
+        .eq('document_id', documentId)
+        .order('last_activity', { ascending: false });
 
-    return { data, error };
+      if (error) {
+        console.error('Database error fetching contributions:', error);
+        return { data: [], error };
+      }
+
+      console.log('Fetched contributions:', data?.length || 0, 'records');
+      return { data: data || [], error: null };
+    } catch (exception) {
+      console.error('Exception fetching contributions:', exception);
+      return { data: [], error: exception };
+    }
   }
 
   static async getUserContributions(userId, documentId = null) {
