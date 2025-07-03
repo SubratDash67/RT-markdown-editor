@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDocument } from '../../contexts/DocumentContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,38 +26,49 @@ const EditorPageContent = () => {
   const [previewMode, setPreviewMode] = useState('split');
   const [lastSaved, setLastSaved] = useState(null);
   const [contributionTracker, setContributionTracker] = useState(null);
+  
+  // Use refs to store the latest functions to avoid dependency issues
+  const loadDocumentRef = useRef(loadDocument);
+  const createDocumentRef = useRef(createDocument);
+  const updateDocumentRef = useRef(updateDocument);
+  
+  // Update refs when functions change
+  useEffect(() => {
+    loadDocumentRef.current = loadDocument;
+    createDocumentRef.current = createDocument;
+    updateDocumentRef.current = updateDocument;
+  }, [loadDocument, createDocument, updateDocument]);
 
   // Use stable references for auto-save to prevent re-renders
   const documentContent = currentDocument?.content || '';
   const { forceSave, isUnsaved } = useAutoSave(documentContent, documentTitle);
 
-  const handleNewDocument = async () => {
-    const { data, error } = await createDocument();
+  const handleNewDocument = useCallback(async () => {
+    const { data, error } = await createDocumentRef.current();
     if (!error && data) {
       navigate(`/editor/${data.id}`);
     }
-  };
+  }, [navigate]);
 
-  const handleTitleChange = async (newTitle) => {
+  const handleTitleChange = useCallback(async (newTitle) => {
     setDocumentTitle(newTitle);
     if (currentDocument && newTitle !== currentDocument.title) {
-      await updateDocument(currentDocument.id, { title: newTitle });
+      await updateDocumentRef.current(currentDocument.id, { title: newTitle });
     }
-  };
+  }, [currentDocument]);
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     forceSave();
     setLastSaved(new Date());
-  };
+  }, [forceSave]);
 
   useEffect(() => {
     if (documentId && documentId !== currentDocument?.id) {
-      loadDocument(documentId);
+      loadDocumentRef.current(documentId);
     } else if (!documentId && !currentDocument) {
       handleNewDocument();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId, currentDocument?.id]); // Functions are not stable, disable lint
+  }, [documentId, currentDocument?.id, handleNewDocument]);
 
   useEffect(() => {
     if (currentDocument) {
