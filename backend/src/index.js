@@ -63,13 +63,16 @@ app.use(helmet({
 
 app.use(express.json());
 
-// Health check endpoint (must be after CORS)
+// Initialize collaboration server AFTER setting up routes
+const collaborationServer = new CollaborationServer(server);
+
+// Health check endpoint (must be after collaboration server is initialized)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    rooms: collaborationServer ? collaborationServer.getRoomCount() : 0,
-    connections: collaborationServer ? collaborationServer.getConnectionCount() : 0,
+    rooms: collaborationServer.getRoomCount(),
+    connections: collaborationServer.getConnectionCount(),
     cors: 'enabled',
     origin: req.headers.origin || 'no-origin'
   });
@@ -80,8 +83,6 @@ app.use('/api/documents', documentsRouter);
 app.use('/api/versions', versionsRouter);
 app.use('/api/shares', sharesRouter);
 app.use('/api/contributions', contributionsRouter);
-
-const collaborationServer = new CollaborationServer(server);
 
 const PORT = process.env.PORT || 5000;
 

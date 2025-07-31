@@ -17,8 +17,8 @@ export class ShareManager {
         .from('document_shares')
         .insert([{
           document_id: documentId,
-          share_token: shareToken,
-          permission_level: permissionLevel,
+          token: shareToken, // Fixed: should be 'token' not 'share_token'
+          access_level: permissionLevel, // Fixed: should be 'access_level' not 'permission_level'
           expires_at: expiresAt,
           created_by: (await supabase.auth.getUser()).data.user?.id
         }])
@@ -36,7 +36,6 @@ export class ShareManager {
       .from('document_shares')
       .select('*')
       .eq('document_id', documentId)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     return { data, error };
@@ -49,8 +48,7 @@ export class ShareManager {
         *,
         document:documents (*)
       `)
-      .eq('share_token', shareToken)
-      .eq('is_active', true)
+      .eq('token', shareToken) // Fixed: should be 'token' not 'share_token'
       .single();
 
     if (shareError) return { data: null, error: shareError };
@@ -65,7 +63,7 @@ export class ShareManager {
   static async revokeShare(shareId) {
     const { data, error } = await supabase
       .from('document_shares')
-      .update({ is_active: false })
+      .delete() // Since we don't have is_active, just delete the share
       .eq('id', shareId)
       .select()
       .single();

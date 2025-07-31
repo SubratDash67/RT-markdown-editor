@@ -66,7 +66,7 @@ export const useAutoSave = (content, title) => {
       ) {
         saveDocument(content, title);
       }
-    }, 1000); // Reduced to 1 second for better real-time collaboration
+    }, 3000); // Increased to 3 seconds to reduce conflicts with collaborative editing
   }, [content, title, saveDocument]);
 
   const forceSave = useCallback(() => {

@@ -73,11 +73,13 @@ export const useCollaborativeEditor = () => {
             updateDocument(currentDocument.id, {
               content,
               updated_at: new Date().toISOString()
+            }).catch(error => {
+              console.error('Failed to sync document changes:', error);
             }).finally(() => {
               isUpdating = false;
             });
           }
-        }, 1000); // Reduced from 2000ms to 1000ms for better sync
+        }, 2000); // Back to 2 seconds to reduce conflicts with auto-save
       }
     });
 

@@ -46,11 +46,20 @@ export const CollaborationProvider = ({ children }) => {
     console.log('Initializing collaboration for document:', documentId);
 
     const newYdoc = new Y.Doc(); // Use Y.Doc correctly
-    const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:5000';
+    
+    // Fix WebSocket URL configuration
+    const wsUrl = process.env.REACT_APP_WS_URL || 
+                  (process.env.NODE_ENV === 'production' 
+                    ? 'wss://rtmd-backend.onrender.com' 
+                    : 'ws://localhost:5000');
     
     console.log('Connecting to WebSocket:', wsUrl);
     
-    const newProvider = new WebsocketProvider(wsUrl, `doc-${documentId}`, newYdoc);
+    const newProvider = new WebsocketProvider(wsUrl, `doc-${documentId}`, newYdoc, {
+      connect: true,
+      resyncInterval: 5000,
+      maxBackoffTime: 30000,
+    });
     const newAwareness = newProvider.awareness;
 
     newAwareness.setLocalStateField('user', {
@@ -64,11 +73,19 @@ export const CollaborationProvider = ({ children }) => {
     newProvider.on('status', (event) => {
       console.log('WebSocket status:', event.status);
       setIsConnected(event.status === 'connected');
+      
+      if (event.status === 'disconnected' || event.status === 'connecting') {
+        console.log('WebSocket attempting to reconnect...');
+      }
     });
 
     newProvider.on('connection-error', (error) => {
       console.error('WebSocket connection error:', error);
       setIsConnected(false);
+    });
+
+    newProvider.on('sync', (isSynced) => {
+      console.log('Document sync status:', isSynced);
     });
 
     newAwareness.on('change', () => {

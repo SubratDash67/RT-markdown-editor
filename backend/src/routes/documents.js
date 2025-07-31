@@ -9,7 +9,7 @@ router.get('/', authenticateUser, async (req, res) => {
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .eq('owner_id', req.user.id)
+      .eq('user_id', req.user.id)
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -25,10 +25,15 @@ router.get('/:id', authenticateUser, async (req, res) => {
       .from('documents')
       .select('*')
       .eq('id', req.params.id)
-      .eq('owner_id', req.user.id)
-      .single();
+      .single(); // Don't filter by user_id here, check access after
 
     if (error) throw error;
+    
+    // Check if user has access (owner or public document)
+    if (data.user_id !== req.user.id && !data.is_public) {
+      return res.status(403).json({ error: 'Access denied to this document' });
+    }
+    
     res.json(data);
   } catch (error) {
     res.status(404).json({ error: 'Document not found' });
@@ -43,7 +48,7 @@ router.post('/', authenticateUser, async (req, res) => {
       .insert([{
         title: title || 'Untitled Document',
         content: content || '',
-        owner_id: req.user.id,
+        user_id: req.user.id,
       }])
       .select()
       .single();
@@ -66,7 +71,7 @@ router.put('/:id', authenticateUser, async (req, res) => {
         updated_at: new Date().toISOString(),
       })
       .eq('id', req.params.id)
-      .eq('owner_id', req.user.id)
+      .eq('user_id', req.user.id)
       .select()
       .single();
 
@@ -83,7 +88,7 @@ router.delete('/:id', authenticateUser, async (req, res) => {
       .from('documents')
       .delete()
       .eq('id', req.params.id)
-      .eq('owner_id', req.user.id);
+      .eq('user_id', req.user.id);
 
     if (error) throw error;
     res.status(204).send();

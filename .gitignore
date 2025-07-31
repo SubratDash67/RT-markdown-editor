@@ -7,3 +7,38 @@ node_modules/
 /backend/.env
 venv
 .env.production
+
+# Development environment files
+/frontend/.env.local
+.env.local
+
+# Database setup files
+database-setup.sql
+database-setup-new.sql
+
+# Bug fixes and documentation
+BUG_FIXES.md
+
+# Scripts and batch files
+start_fixed.sh
+start_fixed.bat
+*.sh
+*.bat
+
+# Log files
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp

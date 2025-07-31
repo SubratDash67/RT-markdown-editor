@@ -4,7 +4,14 @@ const { supabase } = require('../utils/supabase');
 
 class CollaborationServer {
   constructor(server) {
-    this.wss = new WebSocket.Server({ server });
+    this.wss = new WebSocket.Server({ 
+      server,
+      verifyClient: (info) => {
+        // Allow connections from any origin for now
+        console.log('WebSocket connection from:', info.origin);
+        return true;
+      }
+    });
     this.rooms = new Map();
     this.setupWebSocketServer();
   }
@@ -23,9 +30,9 @@ class CollaborationServer {
 
   handleConnection(ws, req) {
     const url = new URL(req.url, `http://${req.headers.host}`);
-    const roomName = url.searchParams.get('room') || 'default';
+    const roomName = url.searchParams.get('room') || url.pathname.replace('/', '') || 'default';
     
-    console.log(`New connection to room: ${roomName}`);
+    console.log(`New connection to room: ${roomName} from ${req.headers.origin || 'unknown origin'}`);
 
     if (!this.rooms.has(roomName)) {
       this.rooms.set(roomName, new Set());
@@ -48,10 +55,17 @@ class CollaborationServer {
       console.error(`WebSocket error in room ${roomName}:`, error);
     });
 
-    setupWSConnection(ws, req, {
-      docName: roomName,
-      gc: true,
-    });
+    // Setup Y.js WebSocket connection with better error handling
+    try {
+      setupWSConnection(ws, req, {
+        docName: roomName,
+        gc: true,
+        gcFilter: () => false, // Keep all history for now
+      });
+    } catch (error) {
+      console.error('Failed to setup WebSocket connection:', error);
+      ws.close(1011, 'Server error during setup');
+    }
   }
 
   getRoomCount() {

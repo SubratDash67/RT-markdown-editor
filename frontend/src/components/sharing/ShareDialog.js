@@ -190,11 +190,11 @@ const ShareDialog = ({ isOpen, onClose }) => {
                       
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleCopyLink(share.share_token)}
+                          onClick={() => handleCopyLink(share.token)} // Fixed: 'token' instead of 'share_token'
                           className="p-1 hover:bg-gray-100 rounded"
                           title="Copy Link"
                         >
-                          {copiedToken === share.share_token ? (
+                          {copiedToken === share.token ? ( // Fixed: 'token' instead of 'share_token'
                             <Check className="w-4 h-4 text-green-600" />
                           ) : (
                             <Copy className="w-4 h-4" />
@@ -202,7 +202,7 @@ const ShareDialog = ({ isOpen, onClose }) => {
                         </button>
                         
                         <button
-                          onClick={() => window.open(ShareManager.buildShareUrl(share.share_token), '_blank')}
+                          onClick={() => window.open(ShareManager.buildShareUrl(share.token), '_blank')} // Fixed: 'token' instead of 'share_token'
                           className="p-1 hover:bg-gray-100 rounded"
                           title="Open Link"
                         >
@@ -234,7 +234,7 @@ const ShareDialog = ({ isOpen, onClose }) => {
                     <div className="mt-2">
                       <input
                         type="text"
-                        value={ShareManager.buildShareUrl(share.share_token)}
+                        value={ShareManager.buildShareUrl(share.token)} // Fixed: 'token' instead of 'share_token'
                         readOnly
                         className="w-full text-xs bg-gray-50 border border-gray-200 rounded px-2 py-1 font-mono"
                       />

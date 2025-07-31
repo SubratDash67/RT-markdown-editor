@@ -52,9 +52,16 @@ export const DocumentProvider = ({ children }) => {
       .eq('id', documentId)
       .single();
 
-    if (!error) {
-      console.log('Loaded document content:', data?.content?.substring(0, 100) + '...');
-      setCurrentDocument(data);
+    if (!error && data) {
+      // Check if user has access to this document
+      if (data.user_id === user?.id || data.is_public) {
+        console.log('Loaded document content:', data?.content?.substring(0, 100) + '...');
+        setCurrentDocument(data);
+      } else {
+        console.error('Access denied to document:', documentId);
+        setLoading(false);
+        return { data: null, error: { message: 'Access denied to this document' } };
+      }
     } else {
       console.error('Error loading document:', error);
     }
@@ -93,7 +100,7 @@ export const DocumentProvider = ({ children }) => {
     const { data, error } = await supabase
       .from('documents')
       .select('*')
-      .eq('owner_id', user.id)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (!error) {

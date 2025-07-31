@@ -165,10 +165,7 @@ export class ContributionTracker {
       
       const { data, error } = await supabase
         .from('user_contributions')
-        .select(`
-          *,
-          user:user_id (email)
-        `)
+        .select('*') // Simplified: just get the contributions without trying to join user data
         .eq('document_id', documentId)
         .order('last_activity', { ascending: false });
 

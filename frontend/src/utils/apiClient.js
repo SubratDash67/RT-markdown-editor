@@ -1,5 +1,12 @@
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://localhost:5001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://rtmd-backend.onrender.com' 
+    : 'http://localhost:5000');
+
+const WS_URL = process.env.REACT_APP_WS_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'wss://rtmd-backend.onrender.com' 
+    : 'ws://localhost:5000');
 
 class ApiClient {
   constructor() {

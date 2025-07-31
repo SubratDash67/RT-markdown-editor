@@ -24,7 +24,7 @@ const SharedDocumentView = () => {
         setError(error.message);
       } else {
         setShareData(data);
-        setViewMode(data.permission_level === 'edit' ? 'split' : 'preview');
+        setViewMode(data.access_level === 'edit' ? 'split' : 'preview'); // Fixed: access_level instead of permission_level
       }
     } catch (err) {
       setError('Failed to load shared document');
@@ -60,7 +60,7 @@ const SharedDocumentView = () => {
   }
 
   const document = shareData.document;
-  const canEdit = shareData.permission_level === 'edit';
+  const canEdit = shareData.access_level === 'edit'; // Fixed: access_level instead of permission_level
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
