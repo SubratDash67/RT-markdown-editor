@@ -14,6 +14,10 @@ function App() {
   const [checkingServer, setCheckingServer] = useState(true);
 
   useEffect(() => {
+    // Initialize theme on app load
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+    
     // Always check server in production, skip in development
     if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
       checkServerHealth();
@@ -23,6 +27,16 @@ function App() {
       setCheckingServer(false);
     }
   }, []);
+
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+  };
 
 const checkServerHealth = async () => {
   try {

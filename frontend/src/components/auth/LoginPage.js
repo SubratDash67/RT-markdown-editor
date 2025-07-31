@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle, Info } from 'lucide-react';
 
 const LoginPage = () => {
   const { user, signIn, signUp } = useAuth();
@@ -11,6 +11,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -20,6 +21,7 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     const { error } = isLogin 
       ? await signIn(email, password)
@@ -27,6 +29,9 @@ const LoginPage = () => {
 
     if (error) {
       setError(error.message);
+    } else if (!isLogin) {
+      // Show success message for signup
+      setSuccessMessage('Account created successfully! Please check your email to verify your account before signing in.');
     }
     setLoading(false);
   };
@@ -102,8 +107,16 @@ const LoginPage = () => {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{successMessage}</span>
             </div>
           )}
 

@@ -29,6 +29,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
     localStorage.setItem('notifications', notifications.toString());
     
     // Apply theme immediately
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
     document.documentElement.setAttribute('data-theme', theme);
     
     onClose();
@@ -38,12 +44,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Settings</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             ×
           </button>
@@ -51,13 +57,13 @@ const SettingsModal = ({ isOpen, onClose }) => {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Theme
             </label>
             <select
               value={theme}
               onChange={(e) => setTheme(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md px-3 py-2"
             >
               <option value="light">Light</option>
               <option value="dark">Dark</option>
@@ -66,7 +72,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Auto-save
             </label>
             <input
@@ -78,7 +84,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Notifications
             </label>
             <input
@@ -93,7 +99,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           >
             Cancel
           </button>
@@ -153,11 +159,11 @@ const TopBar = ({
 
   return (
     <>
-      <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 flex-shrink-0">
+      <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-600 flex items-center justify-between px-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onNewDocument}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             title="New Document"
           >
             <Plus className="w-4 h-4" />
@@ -172,14 +178,14 @@ const TopBar = ({
                   value={documentTitle}
                   onChange={(e) => onTitleChange(e.target.value)}
                   onBlur={() => setIsEditingTitle(false)}
-                  className="bg-transparent border-none outline-none font-medium text-gray-900 min-w-0"
+                  className="bg-transparent border-none outline-none font-medium text-gray-900 dark:text-white min-w-0"
                   autoFocus
                 />
               </form>
             ) : (
               <button
                 onClick={() => setIsEditingTitle(true)}
-                className="font-medium text-gray-900 hover:text-blue-600 transition-colors truncate max-w-xs"
+                className="font-medium text-gray-900 dark:text-white hover:text-blue-600 transition-colors truncate max-w-xs"
               >
                 {documentTitle || 'Untitled Document'}
               </button>

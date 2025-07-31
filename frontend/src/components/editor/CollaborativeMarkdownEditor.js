@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -100,6 +100,21 @@ const CollaborativeMarkdownEditor = ({
 }) => {
   const { ytext, collaborativeExtensions, isConnected } = useCollaborativeEditor();
   const editorRef = useRef(null);
+  const [currentTheme, setCurrentTheme] = useState(theme);
+
+  useEffect(() => {
+    // Listen for theme changes
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setCurrentTheme(savedTheme);
+    
+    const handleStorageChange = () => {
+      const newTheme = localStorage.getItem('theme') || 'light';
+      setCurrentTheme(newTheme);
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const extensions = [
     markdown(),
@@ -112,9 +127,9 @@ const CollaborativeMarkdownEditor = ({
   const value = ytext ? ytext.toString() : '';
 
   return (
-    <div className="h-full w-full bg-white border-r border-gray-200 relative">
+    <div className="h-full w-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-600 relative">
       {!isConnected && (
-        <div className="absolute top-2 right-2 z-10 bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+        <div className="absolute top-2 right-2 z-10 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-2 py-1 rounded text-xs">
           Connecting...
         </div>
       )}
@@ -137,7 +152,7 @@ const CollaborativeMarkdownEditor = ({
           autocompletion: true,
           highlightSelectionMatches: false,
         }}
-        theme={theme === 'dark' ? oneDark : undefined}
+        theme={currentTheme === 'dark' ? oneDark : undefined}
       />
     </div>
   );

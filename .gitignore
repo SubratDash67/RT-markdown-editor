@@ -42,3 +42,6 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+keep-alive-bot.js 
+keep-alive-bot.ps1
+fix-shared-access.sql

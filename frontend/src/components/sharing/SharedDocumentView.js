@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ShareManager } from '../../utils/shareManager';
+import { useAuth } from '../../contexts/AuthContext';
 import MarkdownPreview from '../preview/MarkdownPreview';
 import CollaborativeMarkdownEditor from '../editor/CollaborativeMarkdownEditor';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { Eye, Edit, Lock, ExternalLink } from 'lucide-react';
+import { Eye, Edit, Lock, ExternalLink, LogIn } from 'lucide-react';
 
 const SharedDocumentView = () => {
   const { shareToken } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [shareData, setShareData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('preview');
+  const [requiresAuth, setRequiresAuth] = useState(false);
 
   useEffect(() => {
     loadSharedDocument();
@@ -21,13 +25,26 @@ const SharedDocumentView = () => {
     try {
       const { data, error } = await ShareManager.getDocumentByToken(shareToken);
       if (error) {
-        setError(error.message);
+        // Check if it's an authentication issue
+        if (error.message.includes('access') || error.message.includes('denied')) {
+          setRequiresAuth(true);
+          setError('You need to sign in to view this document');
+        } else {
+          setError(error.message);
+        }
       } else {
         setShareData(data);
         setViewMode(data.access_level === 'edit' ? 'split' : 'preview'); // Fixed: access_level instead of permission_level
+        setRequiresAuth(false);
       }
     } catch (err) {
-      setError('Failed to load shared document');
+      console.error('Error loading shared document:', err);
+      if (!user) {
+        setRequiresAuth(true);
+        setError('You need to sign in to view this document');
+      } else {
+        setError('Failed to load shared document');
+      }
     } finally {
       setLoading(false);
     }
@@ -44,14 +61,31 @@ const SharedDocumentView = () => {
   if (error) {
     return (
       <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md">
           <Lock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            {requiresAuth ? 'Authentication Required' : 'Access Denied'}
+          </h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          {requiresAuth && (
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </button>
+              <p className="text-sm text-gray-500">
+                Sign in to view this shared document
+              </p>
+            </div>
+          )}
           <button
-            onClick={() => window.location.href = '/'}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            onClick={() => navigate('/')}
+            className="mt-4 text-blue-600 hover:text-blue-800 flex items-center gap-1 mx-auto"
           >
+            <ExternalLink className="w-4 h-4" />
             Go to Editor
           </button>
         </div>

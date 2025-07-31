@@ -15,7 +15,6 @@ router.get('/document/:documentId', authenticateUser, async (req, res) => {
       .from('document_shares')
       .select('*')
       .eq('document_id', req.params.documentId)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -27,7 +26,7 @@ router.get('/document/:documentId', authenticateUser, async (req, res) => {
 
 router.post('/document/:documentId', authenticateUser, async (req, res) => {
   try {
-    const { permission_level = 'view', expires_in_days } = req.body;
+    const { access_level = 'view', expires_in_days } = req.body;
     const shareToken = generateShareToken();
     const expiresAt = expires_in_days 
       ? new Date(Date.now() + expires_in_days * 24 * 60 * 60 * 1000).toISOString()
@@ -37,8 +36,8 @@ router.post('/document/:documentId', authenticateUser, async (req, res) => {
       .from('document_shares')
       .insert([{
         document_id: req.params.documentId,
-        share_token: shareToken,
-        permission_level,
+        token: shareToken, // Fixed: should be 'token' not 'share_token'
+        access_level: access_level, // Fixed: should be 'access_level' not 'permission_level'
         expires_at: expiresAt,
         created_by: req.user.id
       }])
@@ -60,8 +59,7 @@ router.get('/token/:shareToken', async (req, res) => {
         *,
         document:documents (*)
       `)
-      .eq('share_token', req.params.shareToken)
-      .eq('is_active', true)
+      .eq('token', req.params.shareToken) // Fixed: should be 'token' not 'share_token'
       .single();
 
     if (shareError) throw shareError;
@@ -80,7 +78,7 @@ router.delete('/:shareId', authenticateUser, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('document_shares')
-      .update({ is_active: false })
+      .delete() // Just delete the share instead of marking inactive
       .eq('id', req.params.shareId)
       .select()
       .single();

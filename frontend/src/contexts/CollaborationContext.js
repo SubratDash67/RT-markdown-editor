@@ -47,18 +47,28 @@ export const CollaborationProvider = ({ children }) => {
 
     const newYdoc = new Y.Doc(); // Use Y.Doc correctly
     
-    // Fix WebSocket URL configuration
-    const wsUrl = process.env.REACT_APP_WS_URL || 
-                  (process.env.NODE_ENV === 'production' 
-                    ? 'wss://rtmd-backend.onrender.com' 
-                    : 'ws://localhost:5000');
+    // Fix WebSocket URL configuration with multiple fallbacks
+    let wsUrl = process.env.REACT_APP_WS_URL;
+    
+    if (!wsUrl) {
+      if (process.env.NODE_ENV === 'production') {
+        // Try HTTPS first, then HTTP as fallback
+        wsUrl = 'wss://rtmd-backend.onrender.com';
+      } else {
+        wsUrl = 'ws://localhost:5000';
+      }
+    }
     
     console.log('Connecting to WebSocket:', wsUrl);
     
     const newProvider = new WebsocketProvider(wsUrl, `doc-${documentId}`, newYdoc, {
       connect: true,
-      resyncInterval: 5000,
-      maxBackoffTime: 30000,
+      resyncInterval: 3000, // More frequent sync
+      maxBackoffTime: 10000, // Faster reconnection
+      params: {
+        documentId: documentId,
+        userId: user.id
+      }
     });
     const newAwareness = newProvider.awareness;
 
@@ -74,18 +84,37 @@ export const CollaborationProvider = ({ children }) => {
       console.log('WebSocket status:', event.status);
       setIsConnected(event.status === 'connected');
       
-      if (event.status === 'disconnected' || event.status === 'connecting') {
-        console.log('WebSocket attempting to reconnect...');
+      if (event.status === 'disconnected') {
+        console.log('WebSocket disconnected, attempting reconnect...');
+        // Try to reconnect after a short delay
+        setTimeout(() => {
+          if (newProvider && !newProvider.wsconnected) {
+            console.log('Manually triggering reconnection...');
+            newProvider.connect();
+          }
+        }, 2000);
+      } else if (event.status === 'connecting') {
+        console.log('WebSocket connecting...');
       }
     });
 
     newProvider.on('connection-error', (error) => {
       console.error('WebSocket connection error:', error);
       setIsConnected(false);
+      // Try fallback URL if available
+      setTimeout(() => {
+        if (!newProvider.wsconnected && process.env.NODE_ENV === 'production') {
+          console.log('Trying fallback connection...');
+          newProvider.connect();
+        }
+      }, 3000);
     });
 
     newProvider.on('sync', (isSynced) => {
       console.log('Document sync status:', isSynced);
+      if (isSynced) {
+        console.log('Document successfully synced');
+      }
     });
 
     newAwareness.on('change', () => {
